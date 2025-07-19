@@ -18,8 +18,8 @@ use simple_moving_average::{SumTreeSMA, SMA};
 use static_fir::{impl_fir, FirCoefs, FirFilter};
 use symphonia_core::conv::dither::{Dither, Rectangular, Triangular};
 // this is the recommended filter from https://www.diyaudio.com/community/attachments/dsd-wide-9998-pdf.1155152/
-impl_fir!(MAIN,f32,34,[-1.0 ,-2.0 ,-3.0 ,-4.0 ,-2.0, 0., 2., 4., 5., 6. ,7. ,9. ,11. ,13. ,15. ,14. ,14.
-,14. ,14. ,15. ,13. ,11. ,9. ,7. ,6. ,5. ,4. ,2. ,0. ,-2. ,-4. ,-3. ,-2. ,-1., ]);
+const COEFFS: [f64;34] = [-1.0 ,-2.0 ,-3.0 ,-4.0 ,-2.0, 0., 2., 4., 5., 6. ,7. ,9. ,11. ,13. ,15. ,14. ,14.
+,14. ,14. ,15. ,13. ,11. ,9. ,7. ,6. ,5. ,4. ,2. ,0. ,-2. ,-4. ,-3. ,-2. ,-1., ];
 
 /*
 const NTF: [f64;1023] = [
@@ -1114,8 +1114,8 @@ fn main() {
            // let iter_borrow = Arc::into_inner(iter).unwrap();
           //  let mut shaper_left = FirFilter::<Ntf128>::new();
           //  let mut shaper_right = FirFilter::<Ntf128>::new();
-            let mut convolver_left = FirFilter::<MAIN>::new();
-            let mut convolver_right = FirFilter::<MAIN>::new();
+            let mut convolver_left = convolver::new(COEFFS.to_vec());
+            let mut convolver_right = convolver::new(COEFFS.to_vec());
 
             let mut absolute_sample_count = 0u128;
             let mut used_sample_count = 0u128;
@@ -1134,9 +1134,9 @@ fn main() {
                     absolute_sample_count += 1;
                 }
             }
-                // let convolved_left = convolver_left.(current_buffer_left.iter().map(|s| *s as f64).collect());
-         //   let convolved_right = convolver_right.do_convolve(current_buffer_right.iter().map(|s| *s as f64).collect());
-            let all_data = current_buffer_left.iter().zip(current_buffer_right).flat_map(|i| [u8::from_sample(convolver_left.feed(*i.0 as f32) / 128.0), u8::from_sample(convolver_right.feed(i.1 as f32) / 128.0)]).collect::<Vec<u8>>();
+                 let convolved_left = convolver_left.do_convolve(current_buffer_left.iter().map(|s| *s as f64).collect());
+            let convolved_right = convolver_right.do_convolve(current_buffer_right.iter().map(|s| *s as f64).collect());
+            let all_data = convolved_left.iter().zip(convolved_right).flat_map(|(l,r)| [(*l + 128.0) as u8, (r + 128.0) as u8]).collect::<Vec<u8>>();
             fw.write_frames(all_data.as_slice()).unwrap();
             fw.end().expect("Failed to end audio frame!");
 
