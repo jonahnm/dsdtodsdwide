@@ -1,0 +1,22 @@
+cargo-features = ["codegen-backend"]
+[package]
+name = "dsdtodsdwide"
+version = "0.1.0"
+edition = "2024"
+[dependencies]
+dsf = "0.2.2"
+bwavfile = "2.0.1"
+intbits = "0.2.0"
+static_fir = "0.2.0"
+idsp = "0.18.0"
+dasp_sample = "0.11.0"
+simple_moving_average = "1.0.2"
+symphonia-core = "0.5.4"
+realfft = "3.5.0"
+rand = "0.9.1"
+
+[profile.release]
+#lto = true
+codegen-units = 1
+panic = "abort"
+codegen-backend = "cranelift"
